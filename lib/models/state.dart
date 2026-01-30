@@ -1,5 +1,7 @@
 part of '../flutter_background_geolocation.dart';
 
+const kDebugMode = false;
+
 // Flattens compound TSConfig state (eg: application.notification) into legacy flat keys
 // so existing Flutter models remain backward compatible.
 Map _flattenCompoundState(Map input) {
@@ -43,6 +45,56 @@ Map _flattenCompoundState(Map input) {
     }
   }
   return out;
+}
+
+Map<String, dynamic> _ensureStringKeyedMap(dynamic value) {
+  if (value == null) return <String, dynamic>{};
+  if (value is Map<String, dynamic>) return value;
+  if (value is Map) {
+    return value.map((k, v) => MapEntry(k.toString(), v));
+  }
+  return <String, dynamic>{};
+}
+
+List<String> _ensureStringList(dynamic value) {
+  if (value == null) return <String>[];
+  if (value is List<String>) return value;
+  if (value is List) return value.map((e) => e.toString()).toList();
+  return <String>[];
+}
+
+void _debugPrintStatePayload(Map data) {
+  try {
+    print('[BGGeo:State] raw payload: $data');
+
+    // Print top-level key -> runtimeType for quick inspection.
+    final parts = <String>[];
+    data.forEach((k, v) {
+      parts.add('${k.toString()}=${v?.runtimeType}');
+    });
+    print('[BGGeo:State] top-level types: ${parts.join(', ')}');
+
+    // If compound groups exist, print their key/types too.
+    for (final group in const [
+      'app',
+      'geolocation',
+      'http',
+      'activity',
+      'persistence',
+      'logger'
+    ]) {
+      final g = data[group];
+      if (g is Map) {
+        final gParts = <String>[];
+        g.forEach((k, v) {
+          gParts.add('${k.toString()}=${v?.runtimeType}');
+        });
+        print('[BGGeo:State] $group types: ${gParts.join(', ')}');
+      }
+    }
+  } catch (e) {
+    print('[BGGeo:State] debugPrintStatePayload ERROR: $e');
+  }
 }
 
 /// Expresses the current state of the plugin, including all [Config] options.
@@ -111,28 +163,24 @@ class State extends Config {
         // flatten compound state for backward compatibility
         super(
             geolocation: (data['geolocation'] is Map)
-                ? GeoConfig.fromMap(
-                    (data['geolocation'] as Map).cast<String, dynamic>())
+                ? GeoConfig.fromMap(_ensureStringKeyedMap(data['geolocation']))
                 : null,
             app: (data['app'] is Map)
-                ? AppConfig.fromMap(
-                    (data['app'] as Map).cast<String, dynamic>())
+                ? AppConfig.fromMap(_ensureStringKeyedMap(data['app']))
                 : null,
             http: (data['http'] is Map)
-                ? HttpConfig.fromMap(
-                    (data['http'] as Map).cast<String, dynamic>())
+                ? HttpConfig.fromMap(_ensureStringKeyedMap(data['http']))
                 : null,
             activity: (data['activity'] is Map)
                 ? ActivityConfig.fromMap(
-                    (data['activity'] as Map).cast<String, dynamic>())
+                    _ensureStringKeyedMap(data['activity']))
                 : null,
             persistence: (data['persistence'] is Map)
                 ? PersistenceConfig.fromMap(
-                    (data['persistence'] as Map).cast<String, dynamic>())
+                    _ensureStringKeyedMap(data['persistence']))
                 : null,
             logger: (data['logger'] is Map)
-                ? LoggerConfig.fromMap(
-                    (data['logger'] as Map).cast<String, dynamic>())
+                ? LoggerConfig.fromMap(_ensureStringKeyedMap(data['logger']))
                 : null,
             desiredAccuracy:
                 _ensureInt((_flattenCompoundState(data))['desiredAccuracy']),
@@ -148,14 +196,24 @@ class State extends Config {
                 (_flattenCompoundState(data))['elasticityMultiplier']),
             stopAfterElapsedMinutes: _ensureInt(
                 (_flattenCompoundState(data))['stopAfterElapsedMinutes']),
-            geofenceProximityRadius: _ensureInt((_flattenCompoundState(data))['geofenceProximityRadius']),
-            maxMonitoredGeofences: _ensureInt((_flattenCompoundState(data))['maxMonitoredGeofences']),
-            geofenceInitialTriggerEntry: _ensureBool((_flattenCompoundState(data))['geofenceInitialTriggerEntry']),
-            desiredOdometerAccuracy: _ensureDouble((_flattenCompoundState(data))['desiredOdometerAccuracy']),
-            useSignificantChangesOnly: _ensureBool((_flattenCompoundState(data))['useSignificantChangesOnly']),
-            disableLocationAuthorizationAlert: _ensureBool((_flattenCompoundState(data))['disableLocationAuthorizationAlert']),
-            showsBackgroundLocationIndicator: _ensureBool((_flattenCompoundState(data))['showsBackgroundLocationIndicator']),
-            enableTimestampMeta: _ensureBool((_flattenCompoundState(data))['enableTimestampMeta']),
+            geofenceProximityRadius: _ensureInt(
+                (_flattenCompoundState(data))['geofenceProximityRadius']),
+            maxMonitoredGeofences: _ensureInt(
+                (_flattenCompoundState(data))['maxMonitoredGeofences']),
+            geofenceInitialTriggerEntry: _ensureBool(
+                (_flattenCompoundState(data))['geofenceInitialTriggerEntry']),
+            desiredOdometerAccuracy: _ensureDouble(
+                (_flattenCompoundState(data))['desiredOdometerAccuracy']),
+            useSignificantChangesOnly: _ensureBool(
+                (_flattenCompoundState(data))['useSignificantChangesOnly']),
+            disableLocationAuthorizationAlert: _ensureBool(
+                (_flattenCompoundState(
+                    data))['disableLocationAuthorizationAlert']),
+            showsBackgroundLocationIndicator: _ensureBool(
+                (_flattenCompoundState(
+                    data))['showsBackgroundLocationIndicator']),
+            enableTimestampMeta:
+                _ensureBool((_flattenCompoundState(data))['enableTimestampMeta']),
             // Android Options
             geofenceModeHighAccuracy: (_flattenCompoundState(data))['geofenceModeHighAccuracy'],
             // ActivityRecognition
@@ -170,9 +228,9 @@ class State extends Config {
             persistMode: (_flattenCompoundState(data))['persistMode'],
             method: (_flattenCompoundState(data))['method'],
             httpRootProperty: (_flattenCompoundState(data))['httpRootProperty'],
-            params: (_flattenCompoundState(data))['params'].cast<String, dynamic>(),
-            headers: (_flattenCompoundState(data))['headers'].cast<String, dynamic>(),
-            extras: (_flattenCompoundState(data))['extras'].cast<String, dynamic>(),
+            params: _ensureStringKeyedMap((_flattenCompoundState(data))['params']),
+            headers: _ensureStringKeyedMap((_flattenCompoundState(data))['headers']),
+            extras: _ensureStringKeyedMap((_flattenCompoundState(data))['extras']),
             autoSync: _ensureBool((_flattenCompoundState(data))['autoSync']),
             autoSyncThreshold: (_flattenCompoundState(data))['autoSyncThreshold'],
             disableAutoSyncOnCellular: _ensureBool((_flattenCompoundState(data))['disableAutoSyncOnCellular']),
@@ -185,12 +243,12 @@ class State extends Config {
             maxRecordsToPersist: (_flattenCompoundState(data))['maxRecordsToPersist'],
             locationsOrderDirection: (_flattenCompoundState(data))['locationsOrderDirection'],
             httpTimeout: (_flattenCompoundState(data))['httpTimeout'],
-            authorization: ((_flattenCompoundState(data))['authorization'] != null) ? Authorization.fromMap((_flattenCompoundState(data))['authorization']) : null,
+            authorization: ((_flattenCompoundState(data))['authorization'] != null) ? Authorization.fromMap(_ensureStringKeyedMap((_flattenCompoundState(data))['authorization'])) : null,
             // Application
             stopOnTerminate: _ensureBool((_flattenCompoundState(data))['stopOnTerminate']),
             startOnBoot: _ensureBool((_flattenCompoundState(data))['startOnBoot']),
             heartbeatInterval: _ensureInt((_flattenCompoundState(data))['heartbeatInterval']),
-            schedule: (_flattenCompoundState(data))['schedule'].cast<String>(),
+            schedule: _ensureStringList((_flattenCompoundState(data))['schedule']),
             // Logging & Debug
             debug: _ensureBool((_flattenCompoundState(data))['debug']),
             logLevel: (_flattenCompoundState(data))['logLevel'],
@@ -202,7 +260,7 @@ class State extends Config {
             // Geolocation Options
             pausesLocationUpdatesAutomatically: _ensureBool((_flattenCompoundState(data))['pausesLocationUpdatesAutomatically']),
             locationAuthorizationRequest: (_flattenCompoundState(data))['locationAuthorizationRequest'],
-            locationAuthorizationAlert: ((_flattenCompoundState(data))['locationAuthorizationAlert'] != null) ? (_flattenCompoundState(data))['locationAuthorizationAlert'].cast<String, dynamic>() : null,
+            locationAuthorizationAlert: ((_flattenCompoundState(data))['locationAuthorizationAlert'] != null) ? _ensureStringKeyedMap((_flattenCompoundState(data))['locationAuthorizationAlert']) : null,
             // Activity Recognition Options
             activityType: (_flattenCompoundState(data))['activityType'],
             stopDetectionDelay: _ensureInt((_flattenCompoundState(data))['stopDetectionDelay']),
@@ -225,8 +283,11 @@ class State extends Config {
             // Application Options
             enableHeadless: (_flattenCompoundState(data))['enableHeadless'],
             scheduleUseAlarmManager: ((_flattenCompoundState(data))['scheduleUseAlarmManager'] != null) ? (_flattenCompoundState(data))['scheduleUseAlarmManager'] : false,
-            backgroundPermissionRationale: ((_flattenCompoundState(data))['backgroundPermissionRationale'] != null) ? PermissionRationale.fromMap((_flattenCompoundState(data))['backgroundPermissionRationale']) : null,
-            notification: ((_flattenCompoundState(data))['notification'] != null) ? Notification.fromMap((_flattenCompoundState(data))['notification']) : null) {
+            backgroundPermissionRationale: ((_flattenCompoundState(data))['backgroundPermissionRationale'] != null) ? PermissionRationale.fromMap(_ensureStringKeyedMap((_flattenCompoundState(data))['backgroundPermissionRationale'])) : null,
+            notification: ((_flattenCompoundState(data))['notification'] != null) ? Notification.fromMap(_ensureStringKeyedMap((_flattenCompoundState(data))['notification'])) : null) {
+    if (kDebugMode) {
+      _debugPrintStatePayload(data);
+    }
     final Map flat = _flattenCompoundState(data);
     enabled = _ensureBool(flat['enabled'])!;
     isFirstBoot = _ensureBool(flat['isFirstBoot'])!;

@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 5.0.4 &mdash; 2025-01-30
+* Fix bug in `State` parsing.
+
 ## 5.0.3 &mdash; 2025-01-29
 * Add guards in dart Location model to handle receiving dummy location-data provided by setOdometer when the SDK is !state.enabled or location auth is denied.  In this state, the SDK will simply zero the odometer, not caring about the location where that occured.
 
